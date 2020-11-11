@@ -2,3 +2,4 @@ Data/
 *.m~
 *.DS_Store
 *swp
+*.mat
