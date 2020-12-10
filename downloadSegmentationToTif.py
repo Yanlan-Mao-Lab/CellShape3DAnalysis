@@ -1,10 +1,22 @@
 
-from os import path
 from tempfile import mkdtemp
 import zipfile
 import wkw
+import numpy as np
+import os, sys
 
+#Look for original image
+annotatedImg = sys.argv[1]
 
+annotatedImgSplitted = annotatedImg.split('_maxCell_');
+
+rawImageFileName = annotatedImgSplitted[0] + 'tif';
+
+#Get its shape
+shape = rawImg.shape;
+
+#Read zip annotation from WebKnossos
+read_volume_annotation(annotatedImg, np.array([0, 0, 0]), shape)
 
 
 
