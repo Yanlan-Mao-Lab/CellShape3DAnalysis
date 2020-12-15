@@ -12,6 +12,8 @@ tiff_stack_trueScale = uint16(imresize3(double(tiff_stack), size(tiff_stack)/res
 
 clearvars tiff_stack
 
+[bboxImageOfCells] = discretizeCells(tiff_stack_trueScale, 4);
+
 %featuresImage = regionprops3(tiff_stack_trueScale-1, 'all');
 
 lastCell = max(tiff_stack_trueScale(:));
@@ -21,38 +23,71 @@ background_dilated = imdilate(background, strel('sphere', 1));
 outerLayerTissue = uint16(tiff_stack_trueScale>0 & background_dilated) .* tiff_stack_trueScale;
 
 clearvars background_dilated background
+%clearvars tiff_stack_trueScale
 
 outerAreasOfCell = cell(lastCell, 1);
+featuresOfCells = cell(lastCell, 4);
+
+bboxImageOfCells(:, 4) = {[]};
+
+selectedCells = find(cellfun(@(x) size(x, 3), bboxImageOfCells(:, 1)) > 200);
 for numCell = 1:lastCell
     numCell
-    outerAreasOfCell{numCell} = regionprops3(outerLayerTissue == numCell, 'Volume');
-end
-
-cellfun(@(x) length(x), outerAreasOfCell);
-
-[neighbours] = calculateNeighbours(tiff_stack_trueScale, 4);
-
-% infoPerZ = {};
-% for numZ = 1:size(tiff_stack_trueScale, 3)
-%     numZ
-%     infoPerZ{numZ} = regionprops(tiff_stack_trueScale(:, :, numZ)-1, {'Area', 'MajorAxisLength', 'MinorAxisLength' 'Eccentricity', 'Orientation', 'ConvexArea', 'FilledArea', 'EquivDiameter', 'Solidity', 'Extent', 'Perimeter'});
-% end
-
-cellHeights = zeros(lastCell, length(infoPerZ));
-for numZ = 1:length(infoPerZ)
-    numZ
-    actualZ = infoPerZ{numZ};
     
-    for numCell = 1:length(actualZ)
-        cellHeights(numCell, numZ) = actualZ(numCell).Area;
+    %3D features
+    featuresOfCells{numCell, 1} = regionprops3(bboxImageOfCells{numCell, 1} == numCell, {'Volume', 'EquivDiameter', 'Extent', 'PrincipalAxisLength', 'Orientation', 'ConvexVolume', 'Solidity', 'SurfaceArea'});
+    
+    %3D features of apical and basal layer
+    currentBoundingBox = bboxImageOfCells{numCell, 2};
+    outerLayerOfCell = outerLayerTissue(currentBoundingBox(2): currentBoundingBox(5), currentBoundingBox(1) : currentBoundingBox(4), currentBoundingBox(3): currentBoundingBox(6))>0 & bboxImageOfCells{numCell, 1} == numCell;
+    featuresOfCells{numCell, 2} = regionprops3(outerLayerOfCell, {'Volume', 'Centroid', 'EquivDiameter', 'Extent', 'PrincipalAxisLength', 'Orientation', 'ConvexVolume', 'Solidity', 'SurfaceArea'});
+    bboxImageOfCells{numCell, 3} = outerLayerOfCell;
+    %2D features
+    currentCellImage = bboxImageOfCells{numCell, 1};
+    currentCellPerZ = cell(size(currentCellImage, 3), 1);
+    for numZ = 1:size(currentCellImage, 3)
+        currentCellPerZ{numZ} = regionprops(currentCellImage(:, :, numZ) == numCell, {'Area', 'MajorAxisLength', 'MinorAxisLength' 'Eccentricity', 'Orientation', 'ConvexArea', 'FilledArea', 'EquivDiameter', 'Solidity', 'Extent', 'Perimeter'});
     end
+    featuresOfCells(numCell, 3) = {currentCellPerZ};
+    %Neighbours
+    %featuresOfCells{numZ, 4} = calculateNeighbours(bboxImageOfCells(:, 1), radius);
 end
 
-for numCell = 1:size(cellHeights, 1)
-    numZsOfCell = find(cellHeights(numCell, :));
+%% Cells with at least 150 zs and that have only a basal and apical side (sortof)
+correctCells = cellfun(@(x) size(x, 3), bboxImageOfCells(:, 1)) > 150 & cellfun(@(x) size(x, 1) == 2, featuresOfCells(:, 2));
+
+correctFeatureCells = featuresOfCells(correctCells, :);
+
+featureTable = vertcat(correctFeatureCells{:, 1});
+cellHeight = [];
+apicalSurface = [];
+basalSurface = [];
+lateralArea = [];
+for numCell = 1:size(correctFeatureCells, 1)
+    numCell
+    apicoBasalFeatures = correctFeatureCells{numCell, 2};
+    [~, apical] = min(apicoBasalFeatures.Centroid(:, 3));
+    [~, basal] = max(apicoBasalFeatures.Centroid(:, 3));
     
+    cellHeight(numCell, 1) = pdist2(apicoBasalFeatures.Centroid(1, :), apicoBasalFeatures.Centroid(2, :));
+    apicalSurface(numCell, 1) = apicoBasalFeatures.Volume(apical);
+    basalSurface(numCell, 1) = apicoBasalFeatures.Volume(basal);
+    lateralArea(numCell, 1) = correctFeatureCells{numCell, 1}.SurfaceArea(1) - apicalSurface(numCell) - basalSurface(numCell);
 end
-find(cellHeights(1, :))
+featureTable = horzcat(featureTable, table(cellHeight, apicalSurface, basalSurface, lateralArea));
+featureTablePixels = featureTable;
+
+featureTableMicrons = featureTable;
+
+featureTableMicrons.Volume = featureTable.Volume * xyScale^3;
+featureTableMicrons.apicalSurface = featureTable.apicalSurface  * xyScale^2;
+featureTableMicrons.basalSurface = featureTable.basalSurface * xyScale^2;
+featureTableMicrons.cellHeight = featureTable.cellHeight * xyScale^1;
+featureTableMicrons.ConvexVolume = featureTable.ConvexVolume * xyScale^3;
+featureTableMicrons.EquivDiameter = featureTable.EquivDiameter * xyScale^1;
+featureTableMicrons.lateralArea = featureTable.lateralArea * xyScale^1;
+featureTableMicrons.PrincipalAxisLength = featureTable.PrincipalAxisLength * xyScale^1;
+featureTableMicrons.SurfaceArea = featureTable.SurfaceArea * xyScale^2;
 
 % outputCSV = cell(lastCell, 1);
 % 
