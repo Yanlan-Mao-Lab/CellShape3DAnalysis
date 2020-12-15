@@ -4,19 +4,34 @@ import zipfile
 import wkw
 import numpy as np
 import os, sys
+from skimage import io
+from os import path, makedirs
+
+#Input:
+# 1: Name of the annotated zip file
+# 2: Directory of images
+# 
+# Example: 'Downloaded/201105_NubG4-UASmyrGFP-UASMbsRNAi_COVERSLIP-FLAT_DISH-3-DISC-1_STACK_maxCell_13270__explorational__pvicente_munuera__c80702.zip' '../TestImages/'
+
 
 #Look for original image
 annotatedImg = sys.argv[1]
 
-annotatedImgSplitted = annotatedImg.split('_maxCell_');
+annotatedImgFileName = os.path.basename(annotatedImg);
 
-rawImageFileName = annotatedImgSplitted[0] + 'tif';
+annotatedImgSplitted = annotatedImgFileName.split('_maxCell_');
+
+rawImageFileName = annotatedImgSplitted[0] + '.tif';
+
+rawImgDir = find(rawImageFileName, sys.argv[2])
+
+rawImg = io.imread(rawImgDir);
 
 #Get its shape
-shape = rawImg.shape;
+shapeRawImg = rawImg.shape;
 
 #Read zip annotation from WebKnossos
-read_volume_annotation(annotatedImg, np.array([0, 0, 0]), shape)
+datasetAnnotated = read_volume_annotation(annotatedImg, np.array([0, 0, 0]), shapeRawImg)
 
 
 
