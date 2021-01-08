@@ -1,3 +1,22 @@
+# Folders to not push
+*/ExternalPrograms/*
+*/Data/*
+*/Results/*
+*/Docs/*
+Datasets
+2_Segmentation/PreTrainedModels/
+2_Segmentation/Proofreading/Downloaded/
+2_Segmentation/Proofreading/ToUpload/
+2_Segmentation/Proofreading/RefinedTiff/
+
+# Extensions not permited
+*.xls
+*.xlsx
+*.mat
+*.tiff
+*.tif
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
