@@ -45,12 +45,28 @@ segmentedImg = segmentedImg - 1;
 uniqueIds=np.unique(segmentedImg)
 maxId = uniqueIds.max()
 
+#Replaces ID with 0 if ID is in a fewer number of slices than threshold
+#VERY slow!!! >> hrs
+
+threshold = 20
+
+postProcessImg=segmentedImg.copy()
+
+for Id in range(maxId):
+    print(Id)
+    count = 0
+    for s in range(postProcessImg.shape[0]):
+        if Id in postProcessImg[s,:,:]:
+            count += 1
+    if count < threshold:
+        postProcessImg[postProcessImg==Id]=0
+
 #Visualise raw, segmented and postprocessed image using napari
 #Napari viewer with raw and segment images as layers
 with napari.gui_qt():
     viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
-#    viewer.add_image(postProcessImg, rgb=False)
+    viewer.add_image(postProcessImg, rgb=False)
 
 #Separate window with post processed image?
 #with napari.gui_qt():
