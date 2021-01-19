@@ -47,6 +47,7 @@ uniqueIds=np.unique(segmentedImg)
 maxId = uniqueIds.max()
 
 #Measures properties of labelled regions
+#Labels with 0 ignored so indices are n-2 from rawImg or n-1 from segmentedImg
 props = measure.regionprops(segmentedImg)
 
 #Array of Id and area
@@ -54,7 +55,7 @@ a = np.zeros((maxId,2))
 
 for i in range(maxId):
     a[i,1] = props[i].area
-    a[i,0] = i
+    a[i,0] = props[i].label
 
 #Threshold segments
 smallThreshold = 10000
@@ -79,20 +80,18 @@ plt.xlabel('Segment area')
 plt.ylabel('Frequency density')
 plt.show()
 
-
-
 #Keep only thresholded Ids in post processed image
 postProcessImg=segmentedImg.copy()
 
 for i in range(len(IdsToRemove)):
-    Id = IdsToRemove[i,0]
+    Id = IdsToRemove[i,0]-1
     postProcessImg[props[Id].coords[:,0],props[Id].coords[:,1],props[Id].coords[:,2]] = 0
 
 #Runs out of memory with large background Ids
 #Method above takes ages with backgroundIds but method below takes ages with IdsToRemove ?
 for i in range(len(backgroundIds)):
     Id = backgroundIds[i,0]
-    postProcessImg[postProcessImg==Id]=0
+    postProcessImg[postProcessImg==Id] = 0
 
 #Visualise raw, segmented and postprocessed image using napari
 #Napari viewer with raw and segment images as layers
