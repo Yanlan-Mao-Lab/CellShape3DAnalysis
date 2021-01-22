@@ -38,6 +38,8 @@ dir = getDirectory("Select a directory containing one or several ."+extension+" 
 
 files = getFileList(dir);
 
+outputDir = getDirectory("Select the output directory");
+
 
 setBatchMode(true);
 k=0;
@@ -57,27 +59,27 @@ for(f=0; f<files.length; f++) {
 			fullName	= getTitle();
 			dirName 	= substring(fullName, 0,lastIndexOf(fullName, "."+extension));
 			fileName 	= substring(fullName, 0, lengthOf(fullName)-lengthOf(extension)-1);
-			File.makeDirectory(dir+File.separator+dirName+File.separator);
+			File.makeDirectory(dir+File.separator);
 
-			print("Saving "+fileName+" under "+dir+File.separator+dirName);
+			print("Saving "+fileName+" under "+dir);
 			
 			getDimensions(x,y,maxChannel,maxZ,maxT);
 			
 			
 			if(is_save_individual_planes) {
 				save_string = getSaveString(pad);
-				print(dir+File.separator+dirName+File.separator+fileName+"_"+save_string+".tif");
-				run("Image Sequence... ", "format=TIFF name=["+fileName+"] digits="+pad+" save=["+dir+File.separator+dirName+File.separator+"]");
+				print(dir+File.separator+fileName+"_"+save_string+".tif");
+				run("Image Sequence... ", "format=TIFF name=["+fileName+"] digits="+pad+" save=["+dir+File.separator+"]");
 				
 			} else {
 				title=getTitle();
 				for (numChannel = 0; numChannel < maxChannel; numChannel++) {
 
 					for (numTFrame = 0; numTFrame < maxT; numTFrame++) {
-						//saveAs("tiff", dir+File.separator+dirName+File.separator+fileName+"_"+(i+1)+".tif");
+						//saveAs("tiff", dir+File.separator+fileName+"_"+(i+1)+".tif");
 						selectWindow(title);
 						run("Make Substack...", "channels="+ numChannel+1 +" slices=1-"+ maxZ +" frames="+(numTFrame+1));
-						saveAs("tiff", dir+File.separator+dirName+File.separator+fileName+"_c"+ numChannel+1 +"_t"+(numTFrame+1)+".tif");
+						saveAs("tiff", outputDir+File.separator+fileName+"_c"+ numChannel+1 +"_t"+(numTFrame+1)+".tif");
 						close();
 					}
 				}
