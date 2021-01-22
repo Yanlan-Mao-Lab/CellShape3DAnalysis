@@ -4,10 +4,10 @@
 */Results/*
 */Docs/*
 Datasets
-2_Segmentation/TransferLearning/PreTrainedModels/
-2_Segmentation/Proofreading/2_Downloaded/
-2_Segmentation/Proofreading/1_ToUpload/
-2_Segmentation/Proofreading/3_RefinedTiff/
+2_Segmentation/3_TransferLearning/PreTrainedModels/
+2_Segmentation/2_Proofreading/2_Downloaded/
+2_Segmentation/2_Proofreading/1_ToUpload/
+2_Segmentation/2_Proofreading/3_RefinedTiff/
 
 # Extensions not permited
 *.xls
