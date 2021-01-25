@@ -6,15 +6,12 @@ export WORKDIR=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMun
 conda activate plant-seg
 
 ## Alejandra Guzman Data
+####CHECK IF DIR EXITS
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MultiCut.yaml
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_GASP.yaml
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MutexWS.yaml
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_DtWatershed.yaml
 
 ## Rici Barrientos Data
 ### Control
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_MultiCut.yaml
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_GASP.yaml
 
 ### Mbs 
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Mbs_MultiCut.yaml
@@ -25,6 +22,10 @@ plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Rok_M
 ## Rob Tetley Data
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
 
+## Run the different instance segmentation methods
+runAllSegmentationMethodsPlantSeg.sh
+
+#Finish
 conda deactivate 
 
 # Step 2: Proofreading
