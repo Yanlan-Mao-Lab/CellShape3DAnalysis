@@ -9,6 +9,9 @@ conda activate plant-seg
 ####CHECK IF DIR EXITS
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MultiCut.yaml
 
+## Rob Tetley Data
+plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
+
 ## Rici Barrientos Data
 ### Control
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_MultiCut.yaml
@@ -19,8 +22,6 @@ plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Mbs_M
 ### Rok
 plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Rok_MultiCut.yaml
 
-## Rob Tetley Data
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
 
 ## Run the different instance segmentation methods
 runAllSegmentationMethodsPlantSeg.sh
