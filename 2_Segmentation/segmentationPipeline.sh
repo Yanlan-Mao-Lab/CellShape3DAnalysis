@@ -6,32 +6,40 @@ export WORKDIR=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMun
 conda activate plant-seg
 
 ## Alejandra Guzman Data
-####CHECK IF DIR EXITS
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MultiCut.yaml
+if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/AlejandraGuzman/confocal_unet_bce_dice_ds3x/MultiCut/" ]; then
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MultiCut.yaml
+fi
 
 ## Rob Tetley Data
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
+if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RobTetley/confocal_unet_bce_dice_ds3x/MultiCut/" ]; then
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
+fi
 
 ## Rici Barrientos Data
 ### Control
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_MultiCut.yaml
+if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP_Control/confocal_unet_bce_dice_ds3x/MultiCut/" ]; then
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_MultiCut.yaml
+fi
 
 ### Mbs 
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Mbs_MultiCut.yaml
+if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/confocal_unet_bce_dice_ds3x/MultiCut/" ]; then
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Mbs_MultiCut.yaml
+fi
 
 ### Rok
-plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Rok_MultiCut.yaml
-
+if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/confocal_unet_bce_dice_ds3x/MultiCut/" ]; then
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Rok_MultiCut.yaml
+fi
 
 ## Run the different instance segmentation methods
-runAllSegmentationMethodsPlantSeg.sh
+$WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSeg.sh
 
 #Finish
 conda deactivate 
 
 # Step 2: Proofreading
 
-# Step 2.1: Prepare segmented data to WebKnossos upload
+# Step 2.1: Prepare segmented data to WebKnossos upload and postprocess it
 conda activate webkronosos
 
 cd 2_Segmentation/Proofreading/
