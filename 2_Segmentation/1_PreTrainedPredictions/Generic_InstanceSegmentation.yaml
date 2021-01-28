@@ -34,15 +34,15 @@ segmentation:
   name: "currentMethod"
   # Segmentation specific parameters here
   # balance under-/over-segmentation; 0 - aim for undersegmentation, 1 - aim for oversegmentation. (Not active for DtWatershed)
-  beta: 0.6
+  beta: betaParam
   # directory where to save the results
-  save_directory: "currentMethod"
+  save_directory: "currentMethod_probThresh_betaParam"
   # enable/disable watershed
   run_ws: True
   # use 2D instead of 3D watershed
   ws_2D: False
   # probability maps threshold
-  ws_threshold: 0.5
+  ws_threshold: probThresh
   # set the minimum superpixels size
   ws_minsize: 50
   # sigma for the gaussian smoothing of the distance transform
