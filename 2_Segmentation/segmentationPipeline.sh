@@ -7,32 +7,35 @@ conda activate plant-seg
 
 ## Alejandra Guzman Data
 if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/AlejandraGuzman/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
-	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/AleData_MultiCut.yaml
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/AleData_MultiCut.yaml
 fi
 
 ## Rob Tetley Data
 if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RobTetley/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
-	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RobData_MultiCut.yaml
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RobData_MultiCut.yaml
 fi
 
 ## Rici Barrientos Data
 ### Control
 if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP_Control/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
-	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Control_MultiCut.yaml
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_Control_MultiCut.yaml
 fi
 
 ### Mbs 
 if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
-	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Mbs_MultiCut.yaml
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_Mbs_MultiCut.yaml
 fi
 
 ### Rok
 if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
-	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/RiciData_Rok_MultiCut.yaml
+	plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_Rok_MultiCut.yaml
 fi
 
 ## Run the different instance segmentation methods
 $WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSeg.sh
+
+## Check basic features of segmented images to see which are better
+python $WORKDIR/2_Segmentation/segmentationGoodnes.py $WORKDIR/Datasets/PreTrainedModel
 
 #Finish
 conda deactivate 

@@ -2,7 +2,7 @@
 
 inputPath=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/CellShape3DAnalysis/Datasets/PreTrainedModel
 
-allData=("RobTetley") #"AlejandraGuzman") #"RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi")
+allData=("RobTetley" "AlejandraGuzman" "RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi")
 
 pretrainedModel=confocal_unet_bce_dice_ds3x
 
@@ -39,10 +39,10 @@ do
 				 -e "s@currentPath@${currentPath}@g" \
 				 -e "s@betaParam@${betaParam[numMethod]}@g" \
 				 -e "s@probThresh@${probThresh[numMethod]}@g" \
-				 $DIR/Generic_InstanceSegmentation.yaml > $DIR/Temp.yaml
+				 $DIR/Models/Generic_InstanceSegmentation.yaml > $DIR/Models/Temp.yaml
 
-				plantseg --config $DIR/Temp.yaml
-				#rm $DIR/Temp.yaml
+				plantseg --config $DIR/Models/Temp.yaml
+				rm $DIR/Models/Temp.yaml
 			fi
 		fi
 	done
