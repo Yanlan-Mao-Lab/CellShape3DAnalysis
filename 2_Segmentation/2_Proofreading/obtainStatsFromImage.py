@@ -36,7 +36,7 @@ if measurementsInMicrons:
 rawImg = io.imread(sys.argv[1]);
 
 segmentedImg = io.imread(sys.argv[2]);
-segmentedImg = segmentedImg - 1;
+#segmentedImg = segmentedImg - 1;
 
 uniqueIds=np.unique(segmentedImg)
 maxId = uniqueIds.max()

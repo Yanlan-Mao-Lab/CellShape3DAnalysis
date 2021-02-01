@@ -55,6 +55,7 @@ $WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSe
 echo '---- Segmentation goodness ----'
 python $WORKDIR/2_Segmentation/segmentationGoodnes.py $WORKDIR/Datasets/PreTrainedModel
 echo '---- Segmentation goodness: Done! ----'
+
 ###### CARE WITH THIS #######
 ###### JUST FOR DEBUG PURPOSES#####
 exit 1
