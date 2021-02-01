@@ -1,17 +1,19 @@
 #!/bin/bash
 # This script is developed to upload stack tiff files of raw and segmented to WebKnossos
+# Always pick the a random file from the directory to improve 
 # Input: rawDirName
 
-export rawDirName=$1
-export segmentedDirName=$1/PreProcessing/confocal_unet_bce_dice_ds3x/GASP/PostProcessing
+rawDirName=$1
+segmentedDirName=$(echo $rawDirName | sed -e "s/ToProcess/PreTrainedModel_best/g")
 
-for fileNameRaw in $rawDirName/*.tif
+
+ls $rawDirName | sort -R | tail -1 | while read file
 do
 
 	echo $fileNameRaw
 
 	export fileNameRawOnly="$(basename "${fileNameRaw}")"
-	export fileNameSeg="$segmentedDirName/${fileNameRawOnly%.tif}_predictions_gasp_average.tiff"
+	export fileNameSeg="$segmentedDirName/${fileNameRawOnly%.tif}_predictions_best.tiff"
 	echo $fileNameSeg
 	#First step: Remove background cell with a python/julia script
 	#Input: raw and segmented file

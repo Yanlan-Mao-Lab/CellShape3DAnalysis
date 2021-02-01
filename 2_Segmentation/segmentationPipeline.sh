@@ -54,13 +54,20 @@ $WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSe
 ## Check basic features of segmented images to see which are better
 echo '---- Segmentation goodness ----'
 python $WORKDIR/2_Segmentation/segmentationGoodnes.py $WORKDIR/Datasets/PreTrainedModel
-
-#Finish
-conda deactivate 
-
+echo '---- Segmentation goodness: Done! ----'
 ###### CARE WITH THIS #######
 ###### JUST FOR DEBUG PURPOSES#####
 exit 1
+
+###### NEED TO CHECK 
+selectBestOutput.sh
+
+## Postprocess output
+echo '---- Postprocess output ----'
+echo '---- Postprocess output: Done! ----'
+
+#Finish
+conda deactivate 
 
 # Step 2: Proofreading
 echo '------------------ Proofreading step ----------------------'
@@ -68,12 +75,16 @@ echo '------------------ Proofreading step ----------------------'
 # Step 2.1: Prepare segmented data to WebKnossos upload and postprocess it
 conda activate webkronosos
 
-cd 2_Segmentation/Proofreading/
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/Original/RiciBarrientos/NubG4-UASmyrGFP_Control/'
+cd 2_Segmentation/2_Proofreading/
+./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RobTetley/'
+./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/AlejandraGuzman/'
+./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/'
+./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP_Control/'
+./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/'
 cd ../..
 
 # Step 2.2: Webknossos
-exit 1 
+
 # Go to: https://webknossos.org/dashboard/datasets
 
 # Step 2.3: Export annotations to image sequence
