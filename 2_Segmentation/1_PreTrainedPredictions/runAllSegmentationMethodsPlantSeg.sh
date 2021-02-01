@@ -11,13 +11,14 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 len=${#allData[@]}
 for (( numData=0; numData<$len; numData++ ))
 do
+	echo "#${allData[numData]}"
 	currentPath=$inputPath/${allData[numData]}/$pretrainedModel/
 	if [ ${allData[numData]} = "AlejandraGuzman" ]; then
 		betaParameters="0.7 0.7 -1 0.5"
 		probabilityThreshold="0.5 0.5 -1 0.5"
 	elif [ ${allData[numData]} = "RobTetley" ]; then
-		betaParameters="0.4 -1 -1 0.3"
-		probabilityThreshold="0.6 -1 -1 0.7"
+		betaParameters="0.4 0.5 -1 0.5"
+		probabilityThreshold="0.6 0.4 -1 0.3"
 	else # Generic params
 		betaParameters="0.6 0.6 0.6 0.6"
 		probabilityThreshold="0.5 0.5 0.5 0.5"
@@ -32,6 +33,7 @@ do
 
 	for numMethod in {0..3}
 	do 
+		echo "##${arrayMethods[numMethod]}"
 		if [ ${betaParam[numMethod]} != -1 ]; then
 			if [ ! -d "$currentPath/${arrayMethods[numMethod]}_${probThresh[numMethod]}_${betaParam[numMethod]}" ]; then
 				
@@ -41,9 +43,11 @@ do
 				 -e "s@probThresh@${probThresh[numMethod]}@g" \
 				 $DIR/Models/Generic_InstanceSegmentation.yaml > $DIR/Models/Temp.yaml
 
-				plantseg --config $DIR/Models/Temp.yaml
+				plantseg --config $DIR/Models/Temp.yaml > out.log
 				rm $DIR/Models/Temp.yaml
 			fi
 		fi
+		echo "##${arrayMethods[numMethod]} - Done!"
 	done
+	echo "#${allData[numData]} - Done!"
 done
