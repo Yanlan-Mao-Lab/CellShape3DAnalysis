@@ -20,7 +20,7 @@ do
 	#Output: (xScale, yScale, zScale) in nanometers 
 	#		MaxCell to use within WebKronossos
 	#		image sequence of both files at Tmp/source/color and Tmp/source/segmentation
-	export outputPython=($(python removeBackgroundToWebKnossos.py $fileNameRaw $fileNameSeg))
+	export outputPython=($(python obtainStatsFromImage.py $fileNameRaw $fileNameSeg))
 	# https://stackoverflow.com/questions/17238608/how-to-return-multiple-variables-from-python-to-bash
 
 	for (( numFrame = 1; numFrame <= ${outputPython[4]}; numFrame++ )); do
