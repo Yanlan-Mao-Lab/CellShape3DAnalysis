@@ -53,15 +53,16 @@ $WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSe
 
 ## Check basic features of segmented images to see which are better
 echo '---- Segmentation goodness ----'
-python $WORKDIR/2_Segmentation/segmentationGoodnes.py $WORKDIR/Datasets/PreTrainedModel
+python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RobTetley/
+python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/AlejandraGuzman/
+python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/
 echo '---- Segmentation goodness: Done! ----'
 
-###### CARE WITH THIS #######
 ###### JUST FOR DEBUG PURPOSES#####
 exit 1
 
 ###### NEED TO CHECK 
-selectBestOutput.sh
+2_Proofreading/selectBestOutput.sh
 
 ## Postprocess output
 echo '---- Postprocess output ----'
@@ -76,22 +77,27 @@ echo '------------------ Proofreading step ----------------------'
 # Step 2.1: Prepare segmented data to WebKnossos upload and postprocess it
 conda activate webkronosos
 
+echo '# Creating a random file to upload to WebKnossos'
 cd 2_Segmentation/2_Proofreading/
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RobTetley/'
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/AlejandraGuzman/'
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/'
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP_Control/'
-./uploadSegmentationToWebKnossos.sh '$WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/'
+./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RobTetley/
+./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/AlejandraGuzman/
+./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/
+./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP_Control/
+./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/
+unzip 2_Downloaded/
 cd ../..
 
 # Step 2.2: Webknossos
 
 # Go to: https://webknossos.org/dashboard/datasets
+exit 1
 
 # Step 2.3: Export annotations to image sequence
-
-python apply_merger_mode_tiff.py ToUpload/201105_NubG4-UASmyrGFP-UASMbsRNAi_COVERSLIP-FLAT_DISH-3-DISC-1_STACK_maxCell_13270/ Downloaded/201105_NubG4-UASmyrGFP-UASMbsRNAi_COVERSLIP-FLAT_DISH-3-DISC-1_STACK_maxCell_13270__explorational__pvicente_munuera__c80702/201105_NubG4-UASmyrGFP-UASMbsRNAi_COVERSLIP-FLAT_DISH-3-DISC-1_STACK_maxCell_13270__explorational__pvicente_munuera__c80702.nml RefinedTiff/
-
+for fileName in 1_ToUpload/*
+do
+	nmlFile=$(find 2_Downloaded/ -name $fileName*.nml)
+	python apply_merger_mode_tiff.py 1_ToUpload/$fileName 2_Downloaded/$nmlFile 3_RefinedTiff/
+done
 
 # Step 3: Transfer learning
 echo '------------------ Transfer learning step ----------------------'

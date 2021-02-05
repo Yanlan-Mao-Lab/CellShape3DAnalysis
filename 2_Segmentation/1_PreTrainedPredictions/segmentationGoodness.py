@@ -20,17 +20,22 @@ with file:
 	write = csv.writer(file)
 
 	# writing the fields  
-	write.writerow(['Name', 'TotalCells', 'AvgVolume', 'StdVolume', 'AvgSolidity', 'pctConvexCells', 'AvgCellHeight'])
+	write.writerow(['Datasets', 'Name', 'TotalCells', 'AvgVolume', 'StdVolume', 'AvgSolidity', 'pctConvexCells', 'AvgCellHeight'])
 
 	for root, subdirs, files in os.walk(sys.argv[1]):
 		for rawFileName in files:
-			if rawFileName.endswith(".tiff") and "_predictions_" in rawFileName:
+			if rawFileName.endswith(".tiff") and ("_gasp_" in rawFileName or "_multicut." in rawFileName or "_dtw." in rawFileName or "_mutex_" in rawFileName):
+				print(root)
 				print(rawFileName)
 				segmentedImg = io.imread(root + '/' + rawFileName);
 				segmentedImg = resize(segmentedImg, (segmentedImg.shape[0] // sizeRefactor, segmentedImg.shape[1] // sizeRefactor, segmentedImg.shape[2] // sizeRefactor), order=0, preserve_range=True, anti_aliasing=False);
 
 				# https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops
-				props = measure.regionprops(segmentedImg.astype('uint16'))
+				try:
+					props = measure.regionprops(segmentedImg.astype('uint16'))
+				except Exception as e:
+					continue
+				
 
 				#Volume
 				volumeList = [cell.area for cell in props];
@@ -54,7 +59,7 @@ with file:
 				meanCellHeight = numpy.mean(cellHeight);
 
 
-				write.writerow([root + '/' + rawFileName, numberOfCells, meanVolume, stdVolume, \
+				write.writerow([root, rawFileName, numberOfCells, meanVolume, stdVolume, \
 					meanSolidity, pctConvexCells, meanCellHeight]) 
 
 
