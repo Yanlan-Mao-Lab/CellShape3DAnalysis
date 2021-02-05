@@ -57,7 +57,7 @@ for rawFileName in os.listdir(inputDir):
 
         for refinedFile in os.listdir(refinedDir):
             if rawFileName.replace('.h5', '') in refinedFile:
-                segmentedImgDir = readImageSequence(refinedDir+'/'+refinedFile)
+                labelledImg = readImageSequence(refinedDir+'/'+refinedFile)
         else:
             segmentedImgDir = findDir(rawFileName.replace('.h5', '_predictions_best.tiff'), inputDir.replace('PreTrainedModel', 'PreTrainedModel_best'))
             labelledImg = io.imread(segmentedImgDir);
