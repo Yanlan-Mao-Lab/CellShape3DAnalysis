@@ -72,7 +72,7 @@ def remove_background(segmentedImg, props, hist=True, nbins=30):
     backgroundIds = np.empty((0,2))
 
     for i in range(len(props)):
-        if a[i,1] > 100000000:
+        if a[i,1] > 1000000:
             backgroundIds= np.append(backgroundIds, np.array([a[i,:]]), axis=0).astype(np.uint32)
     
     for i in range(len(backgroundIds)):
@@ -150,7 +150,10 @@ rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, 
 
 postProcessImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, True)
 
-watershedImg = segmentation.watershed(rawImg,postProcessImg)
+watershedImg = segmentation.watershed(rawImg,postProcessImg,watershed_line=True)
+
+watershed_props = measure.regionprops(watershedImg)
+rem_background_watershedImg, w_props = remove_background(watershedImg, watershed_props, False)
 
 #Visualise raw, segmented and postprocessed image using napari
 #Napari viewer with raw and segment images as layers
@@ -159,3 +162,4 @@ with napari.gui_qt():
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
     viewer.add_image(postProcessImg, rgb=False, blending='additive')
     viewer.add_image(watershedImg, rgb=False, blending='additive')
+    viewer.add_image(rem_background_watershedImg, rgb=False, blending='additive')
