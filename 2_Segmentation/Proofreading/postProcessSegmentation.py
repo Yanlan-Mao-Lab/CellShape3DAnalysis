@@ -150,9 +150,12 @@ rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, 
 
 postProcessImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, True)
 
+watershedImg = segmentation.watershed(rawImg,postProcessImg)
+
 #Visualise raw, segmented and postprocessed image using napari
 #Napari viewer with raw and segment images as layers
 with napari.gui_qt():
     viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
     viewer.add_image(postProcessImg, rgb=False, blending='additive')
+    viewer.add_image(watershedImg, rgb=False, blending='additive')
