@@ -24,6 +24,8 @@ do
 
 	mkdir $outputPath/${allData[numData]}/
 	cp $inputPath/$bestAlgorithm/PostProcessing/*.tiff $outputPath/${allData[numData]}/
+	cp $inputPath/$bestAlgorithm/*.h5 $outputPath/${allData[numData]}/
 
 	rename 's/_predictions_.*.tiff/_predictions_best.tiff/g' $outputPath/${allData[numData]}/*
+	rename 's/_predictions_.*.h5/_predictions_best.h5/g' $outputPath/${allData[numData]}/*
 done

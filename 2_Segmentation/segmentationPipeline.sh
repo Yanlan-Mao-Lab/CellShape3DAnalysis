@@ -53,19 +53,17 @@ $WORKDIR/2_Segmentation/1_PreTrainedPredictions/runAllSegmentationMethodsPlantSe
 
 ## Check basic features of segmented images to see which are better
 echo '---- Segmentation goodness ----'
-python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RobTetley/
-python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/AlejandraGuzman/
-python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/
+#python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RobTetley/
+#python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/AlejandraGuzman/
+#python $WORKDIR/2_Segmentation/1_PreTrainedPredictions/segmentationGoodness.py $WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/
 echo '---- Segmentation goodness: Done! ----'
 
-###### JUST FOR DEBUG PURPOSES#####
-exit 1
-
-###### NEED TO CHECK 
-2_Proofreading/selectBestOutput.sh
+## Pick best segmentations
+#2_Proofreading/selectBestOutput.sh
 
 ## Postprocess output
 echo '---- Postprocess output ----'
+
 echo '---- Postprocess output: Done! ----'
 
 #Finish
@@ -77,35 +75,63 @@ echo '------------------ Proofreading step ----------------------'
 # Step 2.1: Prepare segmented data to WebKnossos upload and postprocess it
 conda activate webkronosos
 
-echo '# Creating a random file to upload to WebKnossos'
-cd 2_Segmentation/2_Proofreading/
-./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RobTetley/
-./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/AlejandraGuzman/
-./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/
-./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP_Control/
-./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/
-unzip 2_Downloaded/
-cd ../..
+echo '# Creating a random file to upload to WebKnossos' #### ADD HERE THE DIRECTORY WHERE IT BELONGS
+cd 2_Proofreading/
+#./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RobTetley/
+#./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/AlejandraGuzman/
+#./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi/
+#./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP_Control/
+#./uploadSegmentationToWebKnossos.sh $WORKDIR/Datasets/ToProcess/RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi/
 
 # Step 2.2: Webknossos
 
 # Go to: https://webknossos.org/dashboard/datasets
-exit 1
+#exit 1
+
+## Download volume annotation from webKnossos
+cd 2_Downloaded
+unzip *
+cd ..
 
 # Step 2.3: Export annotations to image sequence
 for fileName in 1_ToUpload/*
 do
-	nmlFile=$(find 2_Downloaded/ -name $fileName*.nml)
-	python apply_merger_mode_tiff.py 1_ToUpload/$fileName 2_Downloaded/$nmlFile 3_RefinedTiff/
+	export fileNameRaw="$(basename "${fileName}")"
+	downloadedFile=$(ls 2_Downloaded/${fileNameRaw%.zip}*.zip)
+	#echo $fileName
+	#echo ${fileNameRaw%.zip}
+
+	if [ $downloadedFile != '']; then
+
+		mkdir 1_ToUpload/${fileNameRaw%.zip}
+		unzip $fileName -d 1_ToUpload/${fileNameRaw%.zip}
+
+		mkdir 2_Downloaded/${fileNameRaw%.zip}
+		unzip $downloadedFile -d 2_Downloaded/${fileNameRaw%.zip}
+
+		unzip 2_Downloaded/${fileNameRaw%.zip}/data.zip -d 2_Downloaded/${fileNameRaw%.zip}/segmentation
+
+		cp 1_ToUpload/${fileNameRaw%.zip}/datasource-properties.json 2_Downloaded/${fileNameRaw%.zip}/datasource-properties.json
+
+		mkdir 3_RefinedTiff/${fileNameRaw%.zip}
+		python -m wkcuber.export_wkw_as_tiff --source_path 2_Downloaded/${fileNameRaw%.zip}/ --destination_path 3_RefinedTiff/${fileNameRaw%.zip} --layer_name segmentation
+	fi
 done
+
+#rm 1_ToUpload/*
+#rm -r 2_Downloaded/*
+cd ..
+
 
 # Step 3: Transfer learning
 echo '------------------ Transfer learning step ----------------------'
 
 # Step 3.1: Prepare datasets
-python createDatasetFromTiff.py '$WORKDIR/Datasets/ToProcess/' '$WORKDIR/Datasets/HDF5/'
+python 2_Proofreading/createDatasetFromTiff.py $WORKDIR/Datasets/PreTrainedModel/RobTetley/
 
 conda deactivate
+
+exit 1
 
 # Step 3.2: Pytorch-3dunet - Transfer learning 
 conda activate 3dunet
