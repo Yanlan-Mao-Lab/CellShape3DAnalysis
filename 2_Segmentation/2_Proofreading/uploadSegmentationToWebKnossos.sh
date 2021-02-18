@@ -3,11 +3,12 @@
 # Always pick the a random file from the directory to improve 
 # Input: rawDirName
 
-rawDirName=$1
+rawDirName=$1$2/
 segmentedDirName=$(echo $rawDirName | sed -e "s/ToProcess/PreTrainedModel_best/g")
 
 
-ls $rawDirName | sort -R | tail -1 | while read fileNameRaw
+#Add here '| tail -1' to obtain a random one
+ls $rawDirName | sort -R | while read fileNameRaw
 do
 
 	echo $fileNameRaw
@@ -32,7 +33,8 @@ do
 
 		#Third step: create the zip within 1_ToUpload/filename.zip
 		cd Tmp/wkw$numFrame
-		zip -r ../../1_ToUpload/${fileNameRawOnly%.tif}_T${numFrame}_maxCell_${outputPython[3]}.zip *
+		mkdir ../../1_ToUpload/$2/
+		zip -r ../../1_ToUpload/$2/${fileNameRawOnly%.tif}_T${numFrame}_maxCell_${outputPython[3]}.zip *
 		cd ..
 		cd ..
 	done

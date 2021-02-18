@@ -56,9 +56,9 @@ for rawFileName in os.listdir(inputDir):
                     segmentation = hf['segmentation'];
                     segmentationNP = segmentation[()];
                     segmentationNP[labelledImg>0] = labelledImg[labelledImg>0];
-                    #hf['segmentation'] = segmentationNP;
+
                     hf.clear()
-                    hf.create_dataset('segmentation', data=segmentationNP, compression="gzip", compression_opts=9)
+                    hf.create_dataset('label', data=segmentationNP, compression="gzip", compression_opts=9)
                     
             with h5py.File(inputDir.replace('HDF5', 'PreTrainedModel') + '/' + rawFileName.replace('_predictions_best', '')) as rawHf:
                 hf.create_dataset('raw', data=rawHf['raw'], compression="gzip", compression_opts=9)
