@@ -38,22 +38,24 @@ def raw_parameters(rawFilePath):
         
     return zSpacing, xResolution, yResolution
 
-def load_raw_seg_images(rawFilePath, segFilePath):
+def load_raw_seg_images(rawFilePath, segFilePath, resize_img=True):
     # Read segmented image to remove first biggest label
     rawImg = io.imread(rawFilePath);
-    resize_rawImg = resize(rawImg, (rawImg.shape[0], 512, 512),
-                           order=0,preserve_range=True, anti_aliasing=False).astype(np.uint16)
+
     segmentedImg = io.imread(segFilePath);
     segmentedImg = segmentedImg - 1;
-    resize_segmentedImg = resize(segmentedImg, (segmentedImg.shape[0], 512, 512),
-                           order=0,preserve_range=True, anti_aliasing=False).astype(np.uint16)
     
+    if resize_img == True:
+            rawImg = resize(rawImg, (rawImg.shape[0], 512, 512),
+                            order=0, preserve_range=True, anti_aliasing=False).astype(np.uint32)
+            segmentedImg = resize(segmentedImg, (segmentedImg.shape[0], 512, 512),
+                                  order=0, preserve_range=True, anti_aliasing=False).astype(np.uint32)  
     #uniqueIds=np.unique(segmentedImg)
     #maxId = uniqueIds.max()
      
     props = measure.regionprops(segmentedImg)
 
-    return resize_rawImg, resize_segmentedImg, props
+    return rawImg, segmentedImg, props
 
 def area_array(props):
     
@@ -63,7 +65,10 @@ def area_array(props):
         a[i,1] = props[i].area
         a[i,0] = props[i].label
         
-    return a.astype(np.uint32)
+    return a.astype(np.uint16)
+
+#def calculate_thresholds(a):
+    
 
 def remove_background(segmentedImg, props, hist=True, nbins=30):
     
@@ -73,7 +78,7 @@ def remove_background(segmentedImg, props, hist=True, nbins=30):
 
     for i in range(len(props)):
         if a[i,1] > 1000000:
-            backgroundIds= np.append(backgroundIds, np.array([a[i,:]]), axis=0).astype(np.uint32)
+            backgroundIds= np.append(backgroundIds, np.array([a[i,:]]), axis=0).astype(np.uint16)
     
     for i in range(len(backgroundIds)):
         Id = backgroundIds[i,0]
@@ -110,11 +115,11 @@ def threshold_segments(segmentedImg, props, smallThreshold, bigThreshold, hist=F
         else:
             IdsToRemove = np.append(IdsToRemove, i)
             
-    postProcessImg=rem_background_segmentedImg.copy()
+    thresholdImg=rem_background_segmentedImg.copy()
     
     for i in range(len(IdsToRemove)):
         Id = int(IdsToRemove[i])
-        postProcessImg[new_props[Id].coords[:,0],new_props[Id].coords[:,1],new_props[Id].coords[:,2]] = 0
+        thresholdImg[new_props[Id].coords[:,0],new_props[Id].coords[:,1],new_props[Id].coords[:,2]] = 0
     
     #Plot histogram
     if hist == True:
@@ -123,15 +128,15 @@ def threshold_segments(segmentedImg, props, smallThreshold, bigThreshold, hist=F
         plt.ylabel('Frequency density')
         plt.show()
     
-    return postProcessImg
+    return thresholdImg
 
 #Plot histogram of total number of z slices per id
-def z_slice_hist(postProccessImg,nbins=30):
-    postProps = measure.regionprops(postProcessImg)
-    zHeights = np.zeros(len(postProps))
+def z_slice_hist(Img,nbins=30):
+    props = measure.regionprops(Img)
+    zHeights = np.zeros(len(props))
     
-    for i in range(len(postProps)):
-        zHeights[i] = postProps[i].bbox[3]-postProps[i].bbox[0]
+    for i in range(len(props)):
+        zHeights[i] = props[i].bbox[3]-props[i].bbox[0]
         
     plt.hist(zHeights,bins=nbins)
     plt.xlabel('Z height (in slices)')
@@ -141,25 +146,33 @@ def z_slice_hist(postProccessImg,nbins=30):
 
 #Use functions
 
-rawFilePath = '201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
-segFilePath = '201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.tiff'
+#rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
+#segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.tiff'
 
-rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
+#rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
+
+rawImg, segmentedImg, props = load_raw_seg_images(sys.argv[1], sys.argv[2], False)
 
 rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, False)
 
-postProcessImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, True)
+thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
 
-watershedImg = segmentation.watershed(rawImg,postProcessImg,watershed_line=True)
-
+watershedImg = segmentation.watershed(rawImg, thresholdImg, watershed_line = False)
 watershed_props = measure.regionprops(watershedImg)
 rem_background_watershedImg, w_props = remove_background(watershedImg, watershed_props, False)
 
-#Visualise raw, segmented and postprocessed image using napari
+# Saves post processed output as tif
+tiff.imsave('postProcessImg.tif', rem_background_watershedImg)
+
+#https://github.com/taketwo/glasbey
+
+#Visualise raw, segmented, thresholded and watershed image using napari
 #Napari viewer with raw and segment images as layers
 with napari.gui_qt():
     viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
-    viewer.add_image(postProcessImg, rgb=False, blending='additive')
-    viewer.add_image(watershedImg, rgb=False, blending='additive')
+    viewer.add_image(thresholdImg, rgb=False, blending='additive')
+    #viewer.add_image(watershedImg, rgb=False, blending='additive')
     viewer.add_image(rem_background_watershedImg, rgb=False, blending='additive')
+    
+
