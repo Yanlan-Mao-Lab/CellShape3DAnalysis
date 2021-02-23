@@ -67,21 +67,30 @@ def area_array(props):
         
     return a.astype(np.uint16)
 
-#def calculate_thresholds(a):
+def calculate_cell_heights(props):
+    
+    cell_heights = np.zeros((len(props),2))
+    
+    for i in range(len(props)):
+        cell_heights[i,0] = props[i].label
+        cell_heights[i,1] = props[i].bbox[3]-props[i].bbox[0]
+        
+    return cell_heights
+
+#def calculate_thresholds(cell_heights, percentage):
+    
     
 
 def remove_background(segmentedImg, props, hist=True, nbins=30):
     
-    a = area_array(props)
-
-    backgroundIds = np.empty((0,2))
+    backgroundIds = np.zeros((0,1))
 
     for i in range(len(props)):
-        if a[i,1] > 1000000:
-            backgroundIds= np.append(backgroundIds, np.array([a[i,:]]), axis=0).astype(np.uint16)
+        if (props[i].bbox[4] == 512) and (props[i].bbox[5] == 512):
+            backgroundIds= np.append(backgroundIds, props[i].label)
     
     for i in range(len(backgroundIds)):
-        Id = backgroundIds[i,0]
+        Id = backgroundIds[i]
         segmentedImg[segmentedImg==Id] = 0
     
     new_props = measure.regionprops(segmentedImg)
@@ -94,6 +103,8 @@ def remove_background(segmentedImg, props, hist=True, nbins=30):
         plt.xlabel('Segment area')
         plt.ylabel('Frequency density')
         plt.show()
+        
+    segmentedImg = segmentedImg + 1
         
     return segmentedImg, new_props
 
@@ -146,23 +157,23 @@ def z_slice_hist(Img,nbins=30):
 
 #Use functions
 
-#rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
-#segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.tiff'
+rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
+segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.tiff'
 
-#rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
+rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
 
-rawImg, segmentedImg, props = load_raw_seg_images(sys.argv[1], sys.argv[2], False)
+#rawImg, segmentedImg, props = load_raw_seg_images(sys.argv[1], sys.argv[2], True)
 
 rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, False)
 
 thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
-
+#thresholdImg = thresholdImg + 1
 watershedImg = segmentation.watershed(rawImg, thresholdImg, watershed_line = False)
-watershed_props = measure.regionprops(watershedImg)
-rem_background_watershedImg, w_props = remove_background(watershedImg, watershed_props, False)
+#watershed_props = measure.regionprops(watershedImg)
+watershedImg = watershedImg -1
 
 # Saves post processed output as tif
-tiff.imsave('postProcessImg.tif', rem_background_watershedImg)
+tiff.imsave('postProcessImg.tif', watershedImg)
 
 #https://github.com/taketwo/glasbey
 
@@ -172,7 +183,6 @@ with napari.gui_qt():
     viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
     viewer.add_image(thresholdImg, rgb=False, blending='additive')
-    #viewer.add_image(watershedImg, rgb=False, blending='additive')
-    viewer.add_image(rem_background_watershedImg, rgb=False, blending='additive')
+    viewer.add_image(watershedImg, rgb=False, blending='additive')
     
 
