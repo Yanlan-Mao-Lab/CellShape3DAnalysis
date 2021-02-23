@@ -76,10 +76,7 @@ def calculate_cell_heights(props):
         cell_heights[i,1] = props[i].bbox[3]-props[i].bbox[0]
         
     return cell_heights
-
-#def calculate_thresholds(cell_heights, percentage):
-    
-    
+  
 
 def remove_background(segmentedImg, props, hist=True, nbins=30):
     
@@ -108,11 +105,45 @@ def remove_background(segmentedImg, props, hist=True, nbins=30):
         
     return segmentedImg, new_props
 
+def threshold_segments(segmentedImg, props, lower_percentile, higher_percentile, hist=False, nbins=30):
+    
+    cell_heights = calculate_cell_heights(props)
+        
+    smallThreshold = np.percentile(cell_heights[:,1], lower_percentile)
+    bigThreshold = np.percentile(cell_heights[:,1], higher_percentile)
+    
+    IdsThresholded = np.empty((0,2))
+    IdsToRemove = np.empty((0,1))
+    
+    for i in range(len(props)):
+        if cell_heights[i,1] > smallThreshold and cell_heights[i,1] < bigThreshold:
+            IdsThresholded = np.append(IdsThresholded, np.array([cell_heights[i,:]]), axis=0)
+        else:
+            IdsToRemove = np.append(IdsToRemove, i)
+            
+    thresholdImg=rem_background_segmentedImg.copy()
+    
+    for i in range(len(IdsToRemove)):
+        Id = int(IdsToRemove[i])
+        thresholdImg[new_props[Id].coords[:,0],new_props[Id].coords[:,1],new_props[Id].coords[:,2]] = 0
+    
+    #Plot histogram
+    if hist == True:
+        plt.hist(IdsThresholded[:,1], bins=nbins)
+        plt.xlabel('Segment area')
+        plt.ylabel('Frequency density')
+        plt.show()
+    
+    return thresholdImg
+    
+
 #Threshold segments to remove too small/big segments and background
-def threshold_segments(segmentedImg, props, smallThreshold, bigThreshold, hist=False, nbins=30):
+def manual_threshold_segments(segmentedImg, props, smallThreshold, bigThreshold, hist=False, nbins=30):
+
     
     #Measures properties of labelled regions
     #Labels with 0 ignored so indices are n-2 from rawImg or n-1 from segmentedImg
+
     
     #Array of Id and area
     a = area_array(props)
@@ -157,8 +188,8 @@ def z_slice_hist(Img,nbins=30):
 
 #Use functions
 
-rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
-segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.tiff'
+rawFilePath = 'Data/Original/Rob/Part2_Decon_c1_t1.tif'
+segFilePath = 'Data/Original/Rob/Part2_Decon_c1_t1_predictions_best.tiff'
 
 rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
 
@@ -166,7 +197,9 @@ rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segFilePath)
 
 rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, False)
 
-thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
+#thresholdImg = manual_threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
+thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 2, 99.999, False)
+
 #thresholdImg = thresholdImg + 1
 watershedImg = segmentation.watershed(rawImg, thresholdImg, watershed_line = False)
 #watershed_props = measure.regionprops(watershedImg)
