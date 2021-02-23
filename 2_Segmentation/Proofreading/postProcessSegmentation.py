@@ -175,6 +175,8 @@ watershedImg = watershedImg -1
 # Saves post processed output as tif
 tiff.imsave('postProcessImg.tif', watershedImg)
 
+thresholdImg[thresholdImg==1] = 0
+
 #https://github.com/taketwo/glasbey
 
 #Visualise raw, segmented, thresholded and watershed image using napari
@@ -182,7 +184,9 @@ tiff.imsave('postProcessImg.tif', watershedImg)
 with napari.gui_qt():
     viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
     viewer.add_image(segmentedImg, rgb=False, colormap='magenta', blending='additive')
-    viewer.add_image(thresholdImg, rgb=False, blending='additive')
-    viewer.add_image(watershedImg, rgb=False, blending='additive')
+    #viewer.add_image(thresholdImg, rgb=False, blending='additive')
+    viewer.add_labels(thresholdImg, name='threshold')
+    #viewer.add_image(watershedImg, rgb=False, blending='additive')
+    viewer.add_labels(watershedImg, name='watershed')
     
 
