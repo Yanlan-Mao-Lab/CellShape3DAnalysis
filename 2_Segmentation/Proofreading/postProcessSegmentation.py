@@ -157,6 +157,20 @@ def manual_threshold_segments(segmentedImg, smallThreshold, hist=False, nbins=30
     
     return thresholdImg
 
+def threshold_heights(watershedImg, props, percentile):
+    
+    cell_heights = calculate_cell_heights(props)
+        
+    threshold = np.percentile(cell_heights[:,1], percentile)
+        
+    IdsThresholded = np.empty((0,1))
+    
+    for i in range(len(props)):
+        if cell_heights[i,1] < threshold:
+            IdsThresholded = np.append(IdsThresholded, props[i].label)
+    
+    return IdsThresholded.astype(np.uint16) 
+
 
 def in_hull(p, hull):
     """
@@ -177,15 +191,15 @@ def hourglass(cell1ID,cell2ID,watershedImg):
     cell1_ZXY = np.transpose(np.nonzero(watershedImg == cell1ID))
     cell2_ZXY = np.transpose(np.nonzero(watershedImg == cell2ID))
     
-    #separates all XY coordinates of cell 1 = all possible locations of cell 1 in z slices
-    cell1_XY = cell1_ZXY[:,[1, 2]]
+    #separates all XY coordinates of cell 1 = all possible locations of cell 1 in last 3 slices
+    #cell1_XY_maxslices = cell1_ZXY[np.where(np.isin(cell1_ZXY[:,0],np.unique(cell1_ZXY[:,0])[-5:]))][:,1:]
+    cell1_XY_maxslices = cell1_ZXY[:,[1, 2]]   
     
     #calculate coordinates of bottom slice of cell 2
-    cell2_ZXY_minslice = cell2_ZXY[[np.where(cell2_ZXY[:,0] == min(cell2_ZXY[:,0]))]]
-    cell2_XY_minslice = np.squeeze(cell2_ZXY_minslice[:, :, [1, 2]], axis=0)
+    cell2_XY_minslice = cell2_ZXY[np.where(np.isin(cell2_ZXY[:,0],np.unique(cell2_ZXY[:,0])[0]))][:,1:]
     
     #check if coordinates of bottom slice of cell 2 are within the convex hull/cluster of all cell 1 points
-    matches = np.sum(in_hull(cell2_XY_minslice, cell1_XY))
+    matches = np.sum(in_hull(cell2_XY_minslice, cell1_XY_maxslices))
     
     #return matches
     
@@ -193,7 +207,6 @@ def hourglass(cell1ID,cell2ID,watershedImg):
         watershedImg[watershedImg==cell1ID] = cell2ID
         
     return watershedImg
-    
     
 
 def merge_labels(watershedImg, topCellID, bottomCellID):
