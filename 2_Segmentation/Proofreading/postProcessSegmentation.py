@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from skimage import io, measure, morphology, segmentation
 from skimage.transform import resize
 from PIL import Image
+from scipy.spatial import Delaunay
 import napari
 
 
@@ -45,6 +46,7 @@ def load_raw_seg_images(rawFilePath, segFilePath, resize_img=True):
 
     h5File = h5py.File(segFilePath, 'r')
     segmentedImg = np.array(h5File.get('segmentation'))
+    #segmentedImg = io.imread(segFilePath)
     segmentedImg = segmentedImg - 1;
     
     if resize_img == True:
@@ -107,19 +109,20 @@ def remove_background(segmentedImg, props, hist=True, nbins=30):
         
     return segmentedImg, new_props
 
-def threshold_segments(segmentedImg, props, lower_percentile, hist=False, nbins=30):
+def threshold_segments(segmentedImg, props, lower_percentile, higher_percentile, hist=False, nbins=30):
     
     cell_heights = calculate_cell_heights(props)
         
     smallThreshold = np.percentile(cell_heights[:,1], lower_percentile)
+    bigThreshold = np.percentile(cell_heights[:,1], higher_percentile)
     
-    #skimage.morphology.remove_small_objects
+    #skimage.morphology.remove_small_objects()
     
     IdsThresholded = np.empty((0,2))
     IdsToRemove = np.empty((0,1))
     
     for i in range(len(props)):
-        if cell_heights[i,1] > smallThreshold:
+        if cell_heights[i,1] > smallThreshold and cell_heights[i,1] < bigThreshold:
             IdsThresholded = np.append(IdsThresholded, np.array([cell_heights[i,:]]), axis=0)
         else:
             IdsToRemove = np.append(IdsToRemove, i)
@@ -154,6 +157,51 @@ def manual_threshold_segments(segmentedImg, smallThreshold, hist=False, nbins=30
     
     return thresholdImg
 
+
+def in_hull(p, hull):
+    """
+    Test if points in `p` are in `hull`
+
+    `p` should be a `NxK` coordinates of `N` points in `K` dimensions
+    `hull` is either a scipy.spatial.Delaunay object or the `MxK` array of the 
+    coordinates of `M` points in `K`dimensions for which Delaunay triangulation
+    will be computed
+    """
+    if not isinstance(hull,Delaunay):
+        hull = Delaunay(hull)
+
+    return hull.find_simplex(p)>=0
+
+def hourglass(cell1ID,cell2ID,watershedImg):
+    
+    cell1_ZXY = np.transpose(np.nonzero(watershedImg == cell1ID))
+    cell2_ZXY = np.transpose(np.nonzero(watershedImg == cell2ID))
+    
+    #separates all XY coordinates of cell 1 = all possible locations of cell 1 in z slices
+    cell1_XY = cell1_ZXY[:,[1, 2]]
+    
+    #calculate coordinates of bottom slice of cell 2
+    cell2_ZXY_minslice = cell2_ZXY[[np.where(cell2_ZXY[:,0] == min(cell2_ZXY[:,0]))]]
+    cell2_XY_minslice = np.squeeze(cell2_ZXY_minslice[:, :, [1, 2]], axis=0)
+    
+    #check if coordinates of bottom slice of cell 2 are within the convex hull/cluster of all cell 1 points
+    matches = np.sum(in_hull(cell2_XY_minslice, cell1_XY))
+    
+    #return matches
+    
+    if matches > 0.9*cell2_XY_minslice.shape[0]:
+        watershedImg[watershedImg==cell1ID] = cell2ID
+        
+    return watershedImg
+    
+    
+
+def merge_labels(watershedImg, topCellID, bottomCellID):
+    
+    watershedImg[watershedImg==bottomCellID] = topCellID
+        
+    return watershedImg    
+
 #Plot histogram of total number of z slices per id
 def z_slice_hist(Img,nbins=30):
     props = measure.regionprops(Img)
@@ -166,6 +214,7 @@ def z_slice_hist(Img,nbins=30):
     plt.xlabel('Z height (in slices)')
     plt.ylabel('Frequency density')
     plt.show()
+
 
 
 def save_hdf5(segFilePath, zSpacing, xResolution, yResolution):
@@ -185,8 +234,8 @@ def save_hdf5(segFilePath, zSpacing, xResolution, yResolution):
 
 #rawImg, segmentedImg, props = load_raw_seg_images(sys.argv[1], sys.argv[2], True)
 
-rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP-UASRokRNAi_COVERSLIP-FLAT_DISH-2-DISC-1_STACK.tif'
-segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP-UASRokRNAi_COVERSLIP-FLAT_DISH-2-DISC-1_STACK_predictions_gasp_average.h5'
+rawFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK.tif'
+segFilePath = 'Data/Original/Rici/201105_NubG4-UASmyrGFP_COVERSLIP-FLAT_DISH-1-DISC-1_STACK_predictions_gasp_average.h5'
 
 #rawFilePath = 'Data/Original/Rob/Part2_Decon_c1_t1.tif'
 #segFilePath = 'Data/Original/Rob/Part2_Decon_c1_t1_predictions_best.tiff'
@@ -198,7 +247,7 @@ rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, 
 #thresholdImg = manual_threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
 
 #RICI
-thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 10, False)
+thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 10, 100, False)
 
 #ROB
 #thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 30, 99.999, False)
@@ -209,8 +258,10 @@ watershedImg = segmentation.watershed(rawImg, thresholdImg, watershed_line = Fal
 watershedImg = watershedImg -1
 thresholdImg[thresholdImg==1] = 0
 
-# Saves post processed output as h5
+#watershedImg = merge_labels(watershedImg, 712, 649)
 
+# Saves post processed output as h5
+#img = np.nonzzero(watershedImg == cellID)
 
 #tiff.imsave(postProcessFilePath,'.f', watershedImg)
 
