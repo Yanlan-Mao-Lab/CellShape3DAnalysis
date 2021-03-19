@@ -186,78 +186,24 @@ def in_hull(p, hull):
 
     return hull.find_simplex(p)>=0
 
-
-def neighbours(watershedImg):
-    
-    cells=np.sort(np.unique(watershedImg))
-    cells=cells[1:]
-    neighbours=np.empty((0,2))
-    
-    for cel in cells:
-        print(cel)
-        BW = segmentation.find_boundaries(watershedImg==cel)
-        BW_dilated = morphology.binary_dilation(BW)
-        neighs=np.unique(watershedImg[BW_dilated==1])
-        neighs=neighs[1:]
-        for n in neighs:
-            neighbours = np.append(neighbours, [(cel, n)], axis=0)
-            
-    return neighbours
-
-#Fing neighbours for single cell
-def cell_neighbours(cellID, segmentedImg):
-    
-    neighbours=np.empty((0,2))
-
-    BW = segmentation.find_boundaries(segmentedImg==cellID)
-    BW_dilated = morphology.binary_dilation(BW)
-    neighs=np.unique(segmentedImg[BW_dilated==1])
-    neighs=neighs[1:]
-            
-    return neighs
-
-#Find outlines
-def neighbour_outlines(cellID, segmentedImg):
-    
-    neighs=cell_neighbours(cellID, segmentedImg)
-    
-    mask = np.isin(segmentedImg,neighs)
-    inmask=~mask
-    neighboursImg = segmentedImg.copy()
-    neighboursImg[inmask]=0
-    boundariesImg = segmentation.find_boundaries(nImg)
-    
-    #Show in napari
-    with napari.gui_qt():
-        viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
-        viewer.add_labels(segmentedImg, name='PlantSeg')
-        viewer.add_labels(neighboursImg, name='neighbours')
-        viewer.add_labels(boundariesImg, name='boundaries')
-        
-    return neighboursImg, boundariesImg
-        
-   
 def hourglass(cell1ID,cell2ID,watershedImg):
     
     cell1_ZXY = np.transpose(np.nonzero(watershedImg == cell1ID))
     cell2_ZXY = np.transpose(np.nonzero(watershedImg == cell2ID))
     
     #separates all XY coordinates of cell 1 = all possible locations of cell 1 in last 3 slices
-    cell1_XY_maxslices = cell1_ZXY[np.where(np.isin(cell1_ZXY[:,0],np.unique(cell1_ZXY[:,0])[-3:]))][:,1:]
-    #cell1_XY_maxslices = cell1_ZXY[:,[1, 2]]   
+    #cell1_XY_maxslices = cell1_ZXY[np.where(np.isin(cell1_ZXY[:,0],np.unique(cell1_ZXY[:,0])[-5:]))][:,1:]
+    cell1_XY_maxslices = cell1_ZXY[:,[1, 2]]   
     
     #calculate coordinates of bottom slice of cell 2
     cell2_XY_minslice = cell2_ZXY[np.where(np.isin(cell2_ZXY[:,0],np.unique(cell2_ZXY[:,0])[0]))][:,1:]
     
     #check if coordinates of bottom slice of cell 2 are within the convex hull/cluster of all cell 1 points
-    #matches = np.sum(in_hull(cell2_XY_minslice, cell1_XY_maxslices))
+    matches = np.sum(in_hull(cell2_XY_minslice, cell1_XY_maxslices))
     
     #return matches
     
-    #if matches > 0.9*cell2_XY_minslice.shape[0]:
-    #    watershedImg[watershedImg==cell1ID] = cell2ID
-        
-    if all(i in cell1_XY_maxslices for i in cell2_XY_minslice):
+    if matches > 0.9*cell2_XY_minslice.shape[0]:
         watershedImg[watershedImg==cell1ID] = cell2ID
         
     return watershedImg
@@ -314,7 +260,7 @@ rem_background_segmentedImg, new_props = remove_background(segmentedImg, props, 
 #thresholdImg = manual_threshold_segments(rem_background_segmentedImg, new_props, 1000, 110000, False)
 
 #RICI
-thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 20, 100, False)
+thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 10, 100, False)
 
 #ROB
 #thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 30, 99.999, False)
