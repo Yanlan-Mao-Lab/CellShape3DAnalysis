@@ -1,10 +1,10 @@
 #!/bin/bash
 
-inputPath=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/CellShape3DAnalysis/Datasets/PreTrainedModel
+inputPath=$1
 
 allData=("RobTetley" "AlejandraGuzman" "RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi")
 
-pretrainedModel=confocal_unet_bce_dice_ds3x
+pretrainedModel=$2 
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
@@ -14,14 +14,19 @@ do
 	echo "#${allData[numData]}"
 	currentPath=$inputPath/${allData[numData]}/$pretrainedModel/
 	if [ ${allData[numData]} = "AlejandraGuzman" ]; then
-		betaParameters="0.7 0.7 -1 0.5"
-		probabilityThreshold="0.5 0.5 -1 0.5"
+		probabilityThreshold="0.0001 -1 -1 -1"
+		betaParameters="0.83 -1 -1 -1"
 	elif [ ${allData[numData]} = "RobTetley" ]; then
-		betaParameters="0.4 0.5 -1 0.5"
-		probabilityThreshold="0.6 0.4 -1 0.3"
-	else # Generic params
-		betaParameters="0.6 0.6 0.6 0.6"
-		probabilityThreshold="0.5 0.5 0.5 0.5"
+		if [ $pretrainedModel = "confocal_unet_bce_dice_ds3x" ]; then
+			probabilityThreshold="0.65 -1 -1 -1"
+			betaParameters="0.2 -1 -1 -1"
+		else
+			probabilityThreshold="0.65 -1 -1 -1"
+			betaParameters="0.4 -1 -1 -1"
+		fi
+	else # Generic params for Rici
+		probabilityThreshold="0.75 -1 -1 -1"
+		betaParameters="0.3 -1 -1 -1"
 	fi
 
 	betaParam=($betaParameters)

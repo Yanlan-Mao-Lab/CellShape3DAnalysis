@@ -1,11 +1,10 @@
 #!/bin/bash
 
 #Here, we move the best output of each category to a give directory.
-# Also rename _predictions_WHATEVER_ for _predictions_best.tiff
 
-inputPath=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/CellShape3DAnalysis/Datasets/PreTrainedModel
-outputPath=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/CellShape3DAnalysis/Datasets/PreTrainedModel_best
-h5Path=/media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/CellShape3DAnalysis/Datasets/HDF5/
+inputPath=$1
+outputPath=$2
+h5Path=$3
 mkdir $outputPath
 
 allData=("RobTetley") #"AlejandraGuzman" "RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi")
