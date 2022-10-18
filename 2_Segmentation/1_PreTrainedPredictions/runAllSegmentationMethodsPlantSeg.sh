@@ -2,7 +2,7 @@
 
 inputPath=$1
 
-allData=("RobTetley" "AlejandraGuzman" "RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi")
+allData=("RobTetley" "AlejandraGuzman" "RiciBarrientos/NubG4-UASmyrGFP_Control" "RiciBarrientos/NubG4-UASmyrGFP-UASMbsRNAi" "RiciBarrientos/NubG4-UASmyrGFP-UASRokRNAi" "RiciBarrientos/CLS1" "RiciBarrientos/UpsideDown_CorrectedPhotobleaching" "RiciBarrientos/CellCycle")
 
 pretrainedModel=$2 
 

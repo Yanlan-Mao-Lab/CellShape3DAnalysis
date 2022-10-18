@@ -54,6 +54,27 @@ while
 			plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_Rok_MultiCut.yaml > out.log
 		fi
 		echo '##Rok - Done!'
+
+		### UpsideDown
+		echo '##UpsideDown - Pre'
+		if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/UpsideDown_CorrectedPhotobleaching/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
+			plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_UpsideDown_MultiCut.yaml > out.log
+		fi
+		echo '##UpsideDown - Done!'
+
+		### CellCycle
+		echo '##CellCycle - Pre'
+		if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/CellCycle/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
+			plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_CellCycle_MultiCut.yaml > out.log
+		fi
+		echo '##CellCycle - Done!'
+
+		### CLS1
+		echo '##CLS1 - Pre'
+		if [ ! -d "$WORKDIR/Datasets/PreTrainedModel/RiciBarrientos/CLS1/confocal_unet_bce_dice_ds3x/MultiCut_0.5_0.6/" ]; then
+			plantseg --config $WORKDIR/2_Segmentation/1_PreTrainedPredictions/Models/RiciData_CLS1_MultiCut.yaml > out.log
+		fi
+		echo '##CLS1 - Done!'
 		echo '#Rici - Done!'
 
 		## Run the different instance segmentation methods

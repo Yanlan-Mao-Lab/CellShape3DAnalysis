@@ -6,7 +6,7 @@ import tifffile as tiff
 from PIL.TiffTags import TAGS
 import numpy as np
 import matplotlib.pyplot as plt
-from skimage import io, measure, morphology, segmentation, transform
+from skimage import io, measure, morphology, segmentation, transform, filters, color
 from PIL import Image
 import napari
 
@@ -42,17 +42,17 @@ def raw_parameters(rawFilePath):
 def load_raw_seg_images(rawFilePath, segFilePath, resize_img=True):
     '''Read segmented image to remove first biggest label and obtain list of cell properties'''
     
-    #If TIFF
-    #rawImg = io.imread(rawFilePath);
-    #segmentedImg = io.imread(segFilePath)
+    if rawFilePath.endswith('tif') or rawFilePath.endswith('tiff'):
+        rawImg = io.imread(rawFilePath)
+        segmentedImg = io.imread(segFilePath)
     
-    #If HDF5
-    rawImgh5 = h5py.File(rawFilePath, 'r')
-    rawImg = np.array(rawImgh5.get('raw'))
+    if rawFilePath.endswith('h5'):
+        rawImgh5 = h5py.File(rawFilePath, 'r')
+        rawImg = np.array(rawImgh5.get('raw'))
 
-    segmentedImgh5 = h5py.File(segFilePath, 'r')
-    segmentedImg = np.array(segmentedImgh5.get('segmentation'))
-    
+        segmentedImgh5 = h5py.File(segFilePath, 'r')
+        segmentedImg = np.array(segmentedImgh5.get('segmentation'))
+        
     segmentedImg = segmentedImg - 1;
     
     if resize_img == True:
@@ -79,7 +79,7 @@ def area_array(props):
     return a.astype(np.uint16)
 
 
-def calculate_cell_heights(props, hist=False, bins=30):
+def calculate_cell_heights(props, hist=False, nbins=30):
     '''Obtain array of cell heights (in slices) from props'''
     
     cell_heights = np.zeros((len(props),2))
@@ -224,7 +224,7 @@ def hourglass_ind(cell1ID,cell2ID,watershedImg):
     
     #calculate coordinates of bottom slice of cell 2
     cell2_XY_minslice = cell2_ZXY[np.where(np.isin(cell2_ZXY[:,0],np.unique(cell2_ZXY[:,0])[0]))][:,1:]
-        
+
     if all(i in cell1_XY_maxslices for i in cell2_XY_minslice):
         watershedImg[watershedImg==cell1ID] = cell2ID
         
@@ -264,29 +264,103 @@ def save_hdf5(segFilePath):
 
 #Use functions
 
-rawImg, segmentedImg, props = load_raw_seg_images(sys.argv[1], sys.argv[2], False)
+#Usage:
+# Rob: python postProcessSegmentation.py /media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/Dropbox\ \(LMCB\)/ShuEn-Pablo/Original/Rob/Part2_Decon_c1_t1.tif /media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/Dropbox\ \(LMCB\)/ShuEn-Pablo/Original/Rob/Part2_Decon_c1_t1_predictions_best.tiff 
+# Ale: python postProcessSegmentation.py /media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/Dropbox\ \(LMCB\)/ShuEn-Pablo/Original/Ale/181210_DM_CellMOr_subsub_reg_decon_c1_t1.h5 /media/pablo/d7c61090-024c-469a-930c-f5ada47fb049/PabloVicenteMunuera/Dropbox\ \(LMCB\)/ShuEn-Pablo/Original/Ale/181210_DM_CellMOr_subsub_reg_decon_c1_t1_predictions_gasp_average.h5
+
+#rawFilePath = sys.argv[1]
+#segmentedFilePath = sys.argv[2]
+
+rawFilePath = 'postProcess_files/Rob/Disc1_decon_c1_t4_NormalizedBackground.tif'
+segmentedFilePath = 'postProcess_files/Rob/Disc1_decon_c1_t4_predictions_best.tiff'
+
+if rawFilePath.endswith('tif') or rawFilePath.endswith('tiff'):
+    zSpacing, xResolution, yResolution = raw_parameters(rawFilePath)
+
+rawImg, segmentedImg, props = load_raw_seg_images(rawFilePath, segmentedFilePath, False)
 
 rem_background_segmentedImg, new_props = remove_background(segmentedImg, props)
 
 thresholdImg = threshold_segments(rem_background_segmentedImg, new_props, 30, 99.99)
-watershedImg = segmentation.watershed(rawImg, thresholdImg)
+watershedImg = segmentation.watershed(filters.scharr(rawImg), thresholdImg)
 
 # Reassign background IDs
 watershedImg = watershedImg -1
 thresholdImg[thresholdImg==1] = 0
 
+# Obtain a valid region (i.e. the places where the cells can fall into)
+averageIntensityValuesPerZ = np.average(np.average(rawImg, axis=1), axis=1)
+averageIdsPerZ = np.average(np.average(segmentedImg, axis=1), axis=1)
+#print(averageIdsPerZ)
+validRegion = morphology.binary_closing(thresholdImg>0, morphology.ball(3))
+validRegion[averageIdsPerZ>1,:,:] = True
+
+# propertyTable = ('area', 'bbox', 'bbox_area', 'centroid', 'convex_area', 'convex_image', 'coords', 'eccentricity')
+
+# intensityProps = ('label', 'mean_intensity', 'weighted_centroid')
+
+# shapeProps = ('label', 'area', 'convex_area', 'equivalent_diameter', 
+#               'extent', 'feret_diameter_max', 'filled_area', 'major_axis_length', 
+#               'minor_axis_length', 'solidity')
+
+# #'eccentricity', 'perimeter' and 'perimeter_crofton' is not implemented for 3D images
+
+# props = measure.regionprops_table(watershedImg, intensity_image=rawImg, properties=('label',))
+
+
+#np.savetxt("shows.csv", props, delimiter=", ", fmt="% s")
+
 # Saves post processed output as h5
-save_hdf5(sys.argv[2])
+#save_hdf5(segmentedFilePath)
 
 # Save as TIFF
 #tiff.imsave(postProcessFilePath,'.f', watershedImg)
 
-#Visualise raw, segmented, thresholded and watershed image using napari
-#Napari viewer with raw and segment images as layers
-with napari.gui_qt():
-    viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
-    viewer.add_labels(segmentedImg, name='PlantSeg')
-    viewer.add_labels(thresholdImg, name='thresholded')
-    viewer.add_labels(watershedImg, name='watershed')
-    
-    
+spacing = np.array([ zSpacing, xResolution, yResolution])
+segmentedImg_newCells = watershedImg;
+segmentedImg_newCells_2 = watershedImg;
+segmentedImg_newCells_3 = segmentedImg_newCells_2;
+newCells_seeds = np.zeros(segmentedImg.shape, dtype=segmentedImg.dtype);
+
+uniqueIds = np.unique(segmentedImg)
+maxId = uniqueIds.max()
+
+while True:
+    #Visualise raw, segmented, thresholded and watershed image using napari
+    #Napari viewer with raw and segment images as layers
+    with napari.gui_qt():
+        viewer = napari.view_image(rawImg, rgb=False, colormap='green', blending='additive')
+        viewer.add_labels(thresholdImg, name='thresholdImg')
+        viewer.add_labels(newCells_seeds, name='new_cellsSeeds')
+        viewer.add_labels(watershedImg, name='watershed')
+        viewer.add_labels(segmentedImg_newCells, name='random_walker')
+        viewer.add_labels(segmentedImg_newCells_2, name='morphological_geodesic_active_contour')
+        viewer.add_labels(segmentedImg_newCells_3, name='morphological_chan_vese')
+        #viewer.add_image(filters.scharr(rawImg), blending='additive', colormap='magenta')
+
+        points = viewer.add_points(
+            name='interactive points',
+            #scale=spacing,
+            ndim = 3,
+            size = 4,
+            n_dimensional = True)
+
+        points.mode = 'add'
+
+    newCellsLocation = points.data
+
+    newCells = np.zeros(segmentedImg.shape, dtype=segmentedImg.dtype)
+    newCells_indices = tuple(np.round(newCellsLocation).astype(int).T)
+    newCells[newCells_indices] = np.arange(len(newCellsLocation)) + maxId + 1 #add here the total number of cells in the watershed image
+    newCells_seeds = morphology.dilation(newCells, morphology.ball(3))
+
+    #segmentedImg_newCells = segmentation.watershed(filters.scharr(rawImg), markers = newCells_seeds) #BEWARE if put 'mask', it does strange behaviours
+    #segmentedImg_newCells = segmentation.random_walker(data = rawImg, labels = newCells_seeds)
+    segmentedImg_newCells_2 = segmentation.morphological_geodesic_active_contour(filters.scharr(rawImg), iterations = 30)
+    segmentedImg_newCells_3 = segmentation.morphological_chan_vese(image = rawImg, iterations = 30)
+
+    #segmentedImg_newCells[watershedImg > 0] = 0
+    #segmentedImg_newCells[validRegion == False] = 0
+
+    #watershedImg[segmentedImg_newCells > 0] = segmentedImg_newCells[segmentedImg_newCells > 0]
+    #skimage.segmentation.join_segmentations(s1, s2)
